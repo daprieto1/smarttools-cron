@@ -1,0 +1,18 @@
+{
+  "name": "smart-tools-cron",
+  "version": "1.0.0",
+  "description": "This is the implementation to the CRON for convert videos from every format to .mp4 format",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "~2.1.35",
+    "mongodb": "^2.2.10",
+    "node-cron": "^1.1.2",
+    "underscore": "^1.8.3",
+    "fluent-ffmpeg": "^2.1.0"
+  }
+}
