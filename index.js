@@ -1,12 +1,23 @@
 var cron = require('node-cron');
 var aws = require('aws-sdk');
-var mongo = require('mongodb');
-var MongoClient = require('mongodb').MongoClient;
 var _ = require('underscore');
 var ffmpeg = require('fluent-ffmpeg');
+var mysql      = require('mysql');
+var fs = require('fs');
 
-// Connection URL 
-var url = 'mongodb://localhost:27017/smarttools-dev';
+//Database credentials
+var databaseConf = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+console.log(databaseConf);
+
+//DataBase connection
+var connection = mysql.createConnection({
+  host     : databaseConf.host,
+  user     : databaseConf.user,
+  password : databaseConf.password,
+  database : databaseConf.database
+});
+
+connection.connect();
 
 var sender   = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
@@ -71,33 +82,20 @@ var list = function() {
 
 list();
 
-var findVideos = function(db, callback) {
-  // Get the documents collection 
-  var collection = db.collection('videos');
-  // Find some documents 
-  collection.find({state: 'InProcess'}).toArray(function(err, videos) {   
-    callback(videos);
-  });
+var updateVideo = function (videoId) {
+
+  connection.query("UPDATE smarttools.videos SET state = 'Converted' WHERE videoId = " + videoId , function(err, videos, fields) {
+      if (!err)
+        console.log('SUCCESS UPDATING VIDEO STATE'); 
+      else
+        console.log('ERROR UPDATING VIDEO STATE: ' + err);  
+    });  
 }
 
-var updateVideo = function (videoId, db) {
-	var collection = db.collection('videos');
-  
-	collection.updateOne(
-		{ _id : new mongo.ObjectID(videoId) } ,
-	    { $set: { state : 'Converted' } }, function(err, result) {
-	    	if(err){
-	    		console.log('ERROR UPDATING VIDEO STATE: ' + err);  
-	    	}else{
-	    		console.log('SUCCESS UPDATING VIDEO STATE');  
-	    	}
-	});  
-}
-
-var convertVideo = function (video, db) {
+var convertVideo = function (video) {
 	console.log('--------------------------------------------------');
 	
-	var videoId = video._id.toJSON();		
+	var videoId = video.videoId;		
 	console.log('CONVERT video ID = ' + videoId);
 	ffmpeg('/Users/Diego/Documents/programs/smarttools/uploads/' + videoId)
         .audioCodec('aac')
@@ -108,7 +106,7 @@ var convertVideo = function (video, db) {
         })
         .on('end', function (file) {
           console.log('SUCCESS CONVERTING VIDEO');
-          updateVideo(videoId, db);
+          updateVideo(videoId);
           if(_.contains(verifiedEmails, video.email)){	    
           	sendMail(video.email, video.contestId);
           } else {
@@ -117,28 +115,22 @@ var convertVideo = function (video, db) {
           }
         })
         .save('/Users/Diego/Documents/programs/smarttools/convertedVideos/' + videoId + '.mp4');  
-	
-	  
 };
 
 
 
 cron.schedule('* * * * *', function(){
   	var date = new Date();
-  	console.log('\n' + date + ' SmartTools CRON is running now');  	
+  	console.log('\n' + date + ' SmartTools CRON is running now');  	  
 
-  	MongoClient.connect(url, function(err, db) {
-	  	console.log("Connected correctly to DB server");
-	 	
-	 	findVideos(db, function(videos) {
-	 		console.log('NUMBER OF VIDEOS: ' + videos.length);
-          	_.each(videos, function (video) {
-          		convertVideo(video, db)
-          	});
-          	//db.close();
+    connection.query("SELECT * FROM smarttools.videos WHERE state = 'InProcess'", function(err, videos, fields) {
+      if (!err)
+        _.each(videos, function (video) {                    
+          convertVideo(video)
         });
-	  
-	});
+      else
+        console.log('ERROR LOADING VIDEOS : ' + err);
+    });
 
 	list();
 
