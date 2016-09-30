@@ -6,8 +6,7 @@ var mysql      = require('mysql');
 var fs = require('fs');
 
 //Database credentials
-var databaseConf = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-console.log(databaseConf);
+var databaseConf = JSON.parse(fs.readFileSync('relational-conf.json', 'utf8'));
 
 //DataBase connection
 var connection = mysql.createConnection({
@@ -23,7 +22,7 @@ var sender   = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
 
 // Load your AWS credentials and try to instantiate the object.
-aws.config.loadFromPath(__dirname + '/config.json');
+aws.config.loadFromPath(__dirname + '/aws-config.json');
 
 // Instantiate SES.
 var ses = new aws.SES();
