@@ -1,2 +1,4 @@
 node_modules/
 config.json
+aws-config.json
+relational-conf.json

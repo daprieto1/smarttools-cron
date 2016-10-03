@@ -1,21 +1,18 @@
 var cron = require('node-cron');
-var aws = require('aws-sdk');
-var mongo = require('mongodb');
-var MongoClient = require('mongodb').MongoClient;
+var AWS = require('aws-sdk');
 var _ = require('underscore');
 var ffmpeg = require('fluent-ffmpeg');
-
-// Connection URL 
-var url = 'mongodb://localhost:27017/smarttools-dev';
 
 var sender   = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
 
 // Load your AWS credentials and try to instantiate the object.
-aws.config.loadFromPath(__dirname + '/config.json');
+AWS.config.loadFromPath(__dirname + '/aws-config.json');
 
 // Instantiate SES.
-var ses = new aws.SES();
+var ses = new AWS.SES();
+var docClient = new AWS.DynamoDB.DocumentClient();
+var dynamodb = new AWS.DynamoDB();
 
 var verify = function (email) {
 	var params = {
@@ -71,33 +68,37 @@ var list = function() {
 
 list();
 
-var findVideos = function(db, callback) {
-  // Get the documents collection 
-  var collection = db.collection('videos');
-  // Find some documents 
-  collection.find({state: 'InProcess'}).toArray(function(err, videos) {   
-    callback(videos);
-  });
-}
+var updateVideo = function (videoId) {
 
-var updateVideo = function (videoId, db) {
-	var collection = db.collection('videos');
+  var params = {
+    TableName:'videos',
+    Key:{
+        'id': videoId
+    },
+    UpdateExpression: "set #state = :state",
+    ExpressionAttributeNames:{
+          '#state': "state"
+    },
+    ExpressionAttributeValues:{
+        ":state":'Converted'
+    }
+  };
   
-	collection.updateOne(
-		{ _id : new mongo.ObjectID(videoId) } ,
-	    { $set: { state : 'Converted' } }, function(err, result) {
-	    	if(err){
-	    		console.log('ERROR UPDATING VIDEO STATE: ' + err);  
-	    	}else{
-	    		console.log('SUCCESS UPDATING VIDEO STATE');  
-	    	}
-	});  
+  docClient.update(params, function(err, data) {
+    if (err) {
+      console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
+      console.log('ERROR UPDATING VIDEO STATE: ' + err);  
+    } else {
+        console.log('SUCCESS UPDATING VIDEO STATE');  
+    }
+  });
+   
 }
 
-var convertVideo = function (video, db) {
+var convertVideo = function (video) {
 	console.log('--------------------------------------------------');
 	
-	var videoId = video._id.toJSON();		
+	var videoId = video.id;		
 	console.log('CONVERT video ID = ' + videoId);
 	ffmpeg('/Users/Diego/Documents/programs/smarttools/uploads/' + videoId)
         .audioCodec('aac')
@@ -108,7 +109,7 @@ var convertVideo = function (video, db) {
         })
         .on('end', function (file) {
           console.log('SUCCESS CONVERTING VIDEO');
-          updateVideo(videoId, db);
+          updateVideo(videoId);
           if(_.contains(verifiedEmails, video.email)){	    
           	sendMail(video.email, video.contestId);
           } else {
@@ -121,24 +122,31 @@ var convertVideo = function (video, db) {
 	  
 };
 
-
-
 cron.schedule('* * * * *', function(){
   	var date = new Date();
-  	console.log('\n' + date + ' SmartTools CRON is running now');  	
+  	console.log('\n' + date + ' SmartTools CRON is running now');  
 
-  	MongoClient.connect(url, function(err, db) {
-	  	console.log("Connected correctly to DB server");
-	 	
-	 	findVideos(db, function(videos) {
-	 		console.log('NUMBER OF VIDEOS: ' + videos.length);
-          	_.each(videos, function (video) {
-          		convertVideo(video, db)
-          	});
-          	//db.close();
+    var params = {
+      TableName : 'videos',
+      FilterExpression: "#state = :state",
+      ExpressionAttributeNames:{
+          '#state': "state"
+      },
+      ExpressionAttributeValues: {
+          ":state":'InProcess'
+      }
+    };
+
+    docClient.scan(params, function(err, data) {
+      if (err) {
+        console.error('ERROR LOAD ALL VIDEOS : ' + err);
+      } else {
+        console.log('NUMBER OF VIDEOS: ' + data.Items.length);
+        _.each(data.Items, function (video) {
+          convertVideo(video);
         });
-	  
-	});
+      }
+    });
 
 	list();
 
