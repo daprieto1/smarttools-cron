@@ -123,7 +123,7 @@ cron.schedule('* * * * *', function(){
   	var date = new Date();
   	console.log('\n' + date + ' SmartTools CRON is running now');  	  
 
-    connection.query("SELECT * FROM smarttools.videos WHERE state = 'InProcess'", function(err, videos, fields) {
+    connection.query("SELECT * FROM smarttools.Video WHERE state = 'InProcess'", function(err, videos, fields) {
       if (!err){
         console.log('NUMBER OF VIDEOS: ' + videos.length);
         _.each(videos, function (video) {                    
