@@ -97,7 +97,7 @@ var convertVideo = function (video) {
 	
 	var videoId = video.id;		
 	console.log('CONVERT video ID = ' + videoId);
-	ffmpeg('/Users/Diego/Documents/programs/smarttools/uploads/' + videoId)
+	ffmpeg('/home/ubuntu/efs/upload/' + videoId)
         .audioCodec('aac')
         .videoCodec('libx264')
         .size('320x200')
@@ -114,7 +114,7 @@ var convertVideo = function (video) {
 			verify(video.email);
           }
         })
-        .save('/Users/Diego/Documents/programs/smarttools/convertedVideos/' + videoId + '.mp4');  
+        .save('/home/ubuntu/efs/converted/' + videoId + '.mp4');  
 };
 
 
@@ -123,7 +123,7 @@ cron.schedule('* * * * *', function(){
   	var date = new Date();
   	console.log('\n' + date + ' SmartTools CRON is running now');  	  
 
-    connection.query("SELECT * FROM smarttools.Video WHERE state = 'InProcess'", function(err, videos, fields) {
+    connection.query("SELECT * FROM smarttools.video WHERE state = 'InProcess'", function(err, videos, fields) {
       if (!err){
         console.log('NUMBER OF VIDEOS: ' + videos.length);
         _.each(videos, function (video) {                    
