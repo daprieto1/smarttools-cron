@@ -13,7 +13,8 @@ var connection = mysql.createConnection({
   host     : databaseConf.host,
   user     : databaseConf.user,
   password : databaseConf.password,
-  database : databaseConf.database
+  database : databaseConf.database,
+  port     : 3306
 });
 
 connection.connect();
@@ -94,7 +95,7 @@ var updateVideo = function (videoId) {
 var convertVideo = function (video) {
 	console.log('--------------------------------------------------');
 	
-	var videoId = video.videoId;		
+	var videoId = video.id;		
 	console.log('CONVERT video ID = ' + videoId);
 	ffmpeg('/Users/Diego/Documents/programs/smarttools/uploads/' + videoId)
         .audioCodec('aac')
@@ -123,12 +124,15 @@ cron.schedule('* * * * *', function(){
   	console.log('\n' + date + ' SmartTools CRON is running now');  	  
 
     connection.query("SELECT * FROM smarttools.videos WHERE state = 'InProcess'", function(err, videos, fields) {
-      if (!err)
+      if (!err){
+        console.log('NUMBER OF VIDEOS: ' + videos.length);
         _.each(videos, function (video) {                    
           convertVideo(video)
         });
-      else
+      }        
+      else{
         console.log('ERROR LOADING VIDEOS : ' + err);
+      }        
     });
 
 	list();
