@@ -14,10 +14,18 @@ var connection = mysql.createConnection({
   user     : databaseConf.user,
   password : databaseConf.password,
   database : databaseConf.database,
-  port     : 3306
+  port     : 3306,
+  timeout: 60000
 });
 
-connection.connect();
+connection.connect(function(err) {
+  if (err) {
+    console.error('error connecting: ' + err.stack);
+    return;
+  }
+ 
+  console.log('connected as id ' + connection.threadId);
+});
 
 var sender   = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
@@ -82,9 +90,9 @@ var list = function() {
 
 list();
 
-var updateVideo = function (videoId) {
+var updateVideo = function (videoId, state) {
 
-  connection.query("UPDATE smarttools.videos SET state = 'Converted' WHERE videoId = " + videoId , function(err, videos, fields) {
+  connection.query("UPDATE smarttools.videos SET state = '" + state + "' WHERE videoId = " + videoId , function(err, videos, fields) {
       if (!err)
         console.log('SUCCESS UPDATING VIDEO STATE'); 
       else
@@ -95,9 +103,9 @@ var updateVideo = function (videoId) {
 var convertVideo = function (video) {
 	console.log('--------------------------------------------------');
 	
-	var videoId = video.id;		
+	var videoId = video.videoId;		
 	console.log('CONVERT video ID = ' + videoId);
-	ffmpeg('/home/ubuntu/efs/upload/' + videoId)
+	ffmpeg('/Users/Diego/Documents/programs/smarttools/uploads/' + videoId)
         .audioCodec('aac')
         .videoCodec('libx264')
         .size('320x200')
@@ -106,7 +114,7 @@ var convertVideo = function (video) {
         })
         .on('end', function (file) {
           console.log('SUCCESS CONVERTING VIDEO');
-          updateVideo(videoId);
+          updateVideo(videoId, "Converted");
           if(_.contains(verifiedEmails, video.email)){	    
           	sendMail(video.email, video.contestId);
           } else {
@@ -114,7 +122,7 @@ var convertVideo = function (video) {
 			verify(video.email);
           }
         })
-        .save('/home/ubuntu/efs/converted/' + videoId + '.mp4');  
+        .save('/Users/Diego/Documents/programs/smarttools/convertedVideos/' + videoId + '.mp4');  
 };
 
 
@@ -123,9 +131,12 @@ cron.schedule('* * * * *', function(){
   	var date = new Date();
   	console.log('\n' + date + ' SmartTools CRON is running now');  	  
 
-    connection.query("SELECT * FROM smarttools.video WHERE state = 'InProcess'", function(err, videos, fields) {
+    connection.query("SELECT * FROM smarttools.videos WHERE state = 'InProcess'", function(err, videos, fields) {
       if (!err){
         console.log('NUMBER OF VIDEOS: ' + videos.length);
+        _.each(videos,function(video){
+          updateVideo(video.videoId, "Process");
+        });
         _.each(videos, function (video) {                    
           convertVideo(video)
         });
