@@ -18,7 +18,9 @@ var params = {
   MessageBody: JSON.stringify(body),
   QueueUrl: "https://sqs.us-west-2.amazonaws.com/942635221058/smarttools"
 };
-sqs.sendMessage(params, function (err, data) {
-  if (err) console.log(err, err.stack); // an error occurred
-  else console.log(data);           // successful response
-});
+for (var i = 0; i < 1; i++) {
+  sqs.sendMessage(params, function (err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else console.log(data);           // successful response
+  });
+}
