@@ -128,10 +128,12 @@ function convertVideo(video) {
 
 function uploadObject() {
   var body = file.createReadStream('converted/1.mp4').pipe(zlib.createGzip());
-  var params = { Bucket: 'bucket', Key: 'converted/1.mp4', Body: body };
-  s3.upload(params, function(err) {
-      console.log(err);
-    });
+  var params = { Bucket: 'smarttools-grupo4', Key: 'converted/1.mp4', Body: 'body' };
+  s3.putObject(params, function (err) {
+    if (!err) {
+      console.log('VIDEO UPLOAD SUCCESS');
+    }
+  });
 }
 
 function getObject(video) {
@@ -145,10 +147,11 @@ var app = Consumer.create({
   queueUrl: 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools',
   attributeNames: ['All'],
   handleMessage: function (message, done) {
-    console.log(message);
+    
     var video = JSON.parse(message.Body);
     getObject(video);
     stream.on('finish', function () {
+      console.log('VIDEO DOWNLOAD SUCCESS');
       Promise.resolve(convertVideo(video))
         .then(done);
     });
@@ -160,9 +163,8 @@ app.on('error', function (err) {
   console.log(err.message);
 });
 
-//app.start();
+app.start();
 
 var date = new Date();
 console.log('\n' + date + ' SmartTools Worker is running now');
 
-uploadObject();
