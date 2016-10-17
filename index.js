@@ -99,9 +99,7 @@ var updateVideo = function (videoId) {
 
 }
 
-function convertVideo(video) {
-  console.log('--------------------------------------------------');
-
+function convertVideo(video, done) {  
   var videoId = video.idVideo;
   console.log('CONVERT video ID = ' + videoId);
   ffmpeg('upload/' + videoId)
@@ -112,7 +110,7 @@ function convertVideo(video) {
       console.log('ERROR CONVERTING VIDEO: ' + err.message);
     })
     .on('end', function (file) {
-      uploadObject(file);
+      uploadObject(done);
       console.log('SUCCESS CONVERTING VIDEO');
       updateVideo(videoId);
       if (_.contains(verifiedEmails, video.email)) {
@@ -126,12 +124,13 @@ function convertVideo(video) {
   return true;
 };
 
-function uploadObject() {
+function uploadObject(done) {
   var body = file.createReadStream('converted/1.mp4').pipe(zlib.createGzip());
   var params = { Bucket: 'smarttools-grupo4', Key: 'converted/1.mp4', Body: 'body' };
   s3.putObject(params, function (err) {
     if (!err) {
       console.log('VIDEO UPLOAD SUCCESS');
+      done();
     }
   });
 }
@@ -147,13 +146,13 @@ var app = Consumer.create({
   queueUrl: 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools',
   attributeNames: ['All'],
   handleMessage: function (message, done) {
-    
+    console.log('--------------------------------------------------');
+    console.log('MESSAGE = ' + message.MessageId);
     var video = JSON.parse(message.Body);
     getObject(video);
     stream.on('finish', function () {
       console.log('VIDEO DOWNLOAD SUCCESS');
-      Promise.resolve(convertVideo(video))
-        .then(done);
+      convertVideo(video, done);
     });
   },
   sqs: new AWS.SQS()
