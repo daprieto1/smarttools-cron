@@ -131,6 +131,7 @@ function uploadObject(done) {
     if (!err) {
       console.log('VIDEO UPLOAD SUCCESS');
       done();
+      console.timeEnd("worker-time");
     }
   });
 }
@@ -147,6 +148,7 @@ var app = Consumer.create({
   attributeNames: ['All'],
   handleMessage: function (message, done) {
     console.log('--------------------------------------------------');
+    console.time("worker-time");
     console.log('MESSAGE = ' + message.MessageId);
     var video = JSON.parse(message.Body);
     getObject(video);
