@@ -4,6 +4,7 @@ var _ = require('underscore');
 var ffmpeg = require('fluent-ffmpeg');
 var file = require('fs');
 var zlib = require('zlib');
+var path = require('path');
 
 var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
@@ -99,7 +100,7 @@ var updateVideo = function (videoId) {
 
 }
 
-function convertVideo(video, done) {  
+function convertVideo(video, done) {
   var videoId = video.idVideo;
   console.log('CONVERT video ID = ' + videoId);
   ffmpeg('upload/' + videoId)
@@ -120,7 +121,7 @@ function convertVideo(video, done) {
         verify(video.email);
       }
     })
-    .save('converted/' + videoId + '.mp4');
+    .save(path.join(__dirname, 'converted/') + videoId + '.mp4');
   return true;
 };
 
@@ -137,7 +138,7 @@ function uploadObject(done) {
 }
 
 function getObject(video) {
-  stream = file.createWriteStream('upload/' + video.idVideo);
+  stream = file.createWriteStream(path.join(__dirname, 'upload/') + video.idVideo);
   var params = { Bucket: 'smarttools-grupo4', Key: 'upload/1.mp4' };
   s3.getObject(params).createReadStream().pipe(stream);
 }
@@ -168,4 +169,5 @@ app.start();
 
 var date = new Date();
 console.log('\n' + date + ' SmartTools Worker is running now');
+
 
