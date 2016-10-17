@@ -121,7 +121,7 @@ function convertVideo(video, done) {
         verify(video.email);
       }
     })
-    .save(path.join(__dirname, 'converted/') + videoId + '.mp4');
+    .save(__dirname + '/converted/' + videoId + '.mp4');
   return true;
 };
 
@@ -138,7 +138,7 @@ function uploadObject(done) {
 }
 
 function getObject(video) {
-  stream = file.createWriteStream(path.join(__dirname, 'upload/') + video.idVideo);
+  stream = file.createWriteStream(__dirname + '/upload/' + video.idVideo);
   var params = { Bucket: 'smarttools-grupo4', Key: 'upload/1.mp4' };
   s3.getObject(params).createReadStream().pipe(stream);
 }
