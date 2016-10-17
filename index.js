@@ -103,7 +103,7 @@ var updateVideo = function (videoId) {
 function convertVideo(video, done) {
   var videoId = video.idVideo;
   console.log('CONVERT video ID = ' + videoId);
-  ffmpeg('upload/' + videoId)
+  ffmpeg(__dirname + '/upload/' + videoId)
     .audioCodec('aac')
     .videoCodec('libx264')
     .size('320x200')
@@ -126,7 +126,7 @@ function convertVideo(video, done) {
 };
 
 function uploadObject(done) {
-  var body = file.createReadStream('converted/1.mp4').pipe(zlib.createGzip());
+  var body = file.createReadStream(__dirname + '/converted/1.mp4').pipe(zlib.createGzip());
   var params = { Bucket: 'smarttools-grupo4', Key: 'converted/1.mp4', Body: 'body' };
   s3.putObject(params, function (err) {
     if (!err) {
