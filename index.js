@@ -127,7 +127,12 @@ var convertVideo = function (video) {
     .save(__dirname + '/../efs/converted/' + videoId + '.mp4');
 };
 
-cmd.run('sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).fs-65f40dcc.efs.us-west-2.amazonaws.com:/ /home/ubuntu/efs');
+cmd.get(
+  'sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).fs-65f40dcc.efs.us-west-2.amazonaws.com:/ /home/ubuntu/efs',
+  function (data) {
+    console.log(data);
+  }
+);
 
 cron.schedule('* * * * *', function () {
   var date = new Date();
