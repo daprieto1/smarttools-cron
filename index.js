@@ -93,7 +93,7 @@ list();
 
 var updateVideo = function (videoId, state) {
 
-  connection.query("UPDATE smarttools.video SET state = '" + state + "' WHERE videoId = " + videoId, function (err, videos, fields) {
+  connection.query("UPDATE smarttools.video SET state = '" + state + "' WHERE videoId = '" + videoId + "'", function (err, videos, fields) {
     if (!err)
       console.log('SUCCESS UPDATING VIDEO STATE');
     else
@@ -104,7 +104,7 @@ var updateVideo = function (videoId, state) {
 var convertVideo = function (video) {
   console.log('--------------------------------------------------');
 
-  var videoId = video.videoId;
+  var videoId = video.id;
   console.log('CONVERT video ID = ' + videoId);
   ffmpeg(__dirname + '/../efs/upload/' + videoId)
     .audioCodec('aac')
@@ -127,6 +127,16 @@ var convertVideo = function (video) {
 };
 
 
+connection.query("SELECT * FROM smarttools.video WHERE state = 'InProcess'", function (err, videos, fields) {
+    if (!err) {
+      console.log('NUMBER OF VIDEOS: ' + videos.length);
+      console.log(videos);
+      
+    }
+    else {
+      console.log('ERROR LOADING VIDEOS : ' + err);
+    }
+  });
 
 cron.schedule('* * * * *', function () {
   var date = new Date();
@@ -135,6 +145,7 @@ cron.schedule('* * * * *', function () {
   connection.query("SELECT * FROM smarttools.video WHERE state = 'InProcess'", function (err, videos, fields) {
     if (!err) {
       console.log('NUMBER OF VIDEOS: ' + videos.length);
+      console.log(videos);
       _.each(videos, function (video) {
         updateVideo(video.videoId, "Process");
       });
