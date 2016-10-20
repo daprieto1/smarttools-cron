@@ -4,6 +4,7 @@ var _ = require('underscore');
 var ffmpeg = require('fluent-ffmpeg');
 var mysql = require('mysql');
 var fs = require('fs');
+var cmd = require('node-cmd');
 
 //Database credentials
 var databaseConf = JSON.parse(fs.readFileSync('relational-conf.json', 'utf8'));
@@ -114,7 +115,7 @@ var convertVideo = function (video) {
       console.log('ERROR CONVERTING VIDEO: ' + err.message);
     })
     .on('end', function (file) {
-      
+
       updateVideo(videoId, "Converted");
       if (_.contains(verifiedEmails, video.email)) {
         sendMail(video.email, video.contestId);
@@ -125,6 +126,8 @@ var convertVideo = function (video) {
     })
     .save(__dirname + '/../efs/converted/' + videoId + '.mp4');
 };
+
+cmd.run('sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).fs-65f40dcc.efs.us-west-2.amazonaws.com:/ /home/ubuntu/efs');
 
 cron.schedule('* * * * *', function () {
   var date = new Date();

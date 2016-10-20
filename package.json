@@ -10,10 +10,11 @@
   "license": "ISC",
   "dependencies": {
     "aws-sdk": "~2.1.35",
-    "mongodb": "^2.2.10",
-    "node-cron": "^1.1.2",
-    "underscore": "^1.8.3",
     "fluent-ffmpeg": "^2.1.0",
-    "mysql": "^2.5.4"
+    "mongodb": "^2.2.10",
+    "mysql": "^2.5.4",
+    "node-cmd": "^1.1.1",
+    "node-cron": "^1.1.2",
+    "underscore": "^1.8.3"
   }
 }
