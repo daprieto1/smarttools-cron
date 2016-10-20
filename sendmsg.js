@@ -5,14 +5,14 @@ AWS.config.loadFromPath(__dirname + '/aws-config.json');
 var sqs = new AWS.SQS();
 
 var body = {
-  idVideo: 1,
+  idVideo: '8076565045816',
   email: 'diego@mensajerosurbanos.com'
 };
 var params = {
   MessageAttributes: {
     "video": {
       DataType: "String",
-      StringValue: "1"
+      StringValue: "8076565045816"
     }
   },
   MessageBody: JSON.stringify(body),

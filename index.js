@@ -78,7 +78,7 @@ var updateVideo = function (videoId) {
   var params = {
     TableName: 'videos',
     Key: {
-      'id': videoId
+      'id': parseInt(videoId)
     },
     UpdateExpression: "set #state = :state",
     ExpressionAttributeNames: {
