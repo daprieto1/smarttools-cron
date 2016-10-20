@@ -93,7 +93,7 @@ list();
 
 var updateVideo = function (videoId, state) {
 
-  connection.query("UPDATE smarttools.video SET state = '" + state + "' WHERE videoId = '" + videoId + "'", function (err, videos, fields) {
+  connection.query("UPDATE smarttools.video SET state = '" + state + "' WHERE id = '" + videoId + "'", function (err, videos, fields) {
     if (!err)
       console.log('SUCCESS UPDATING VIDEO STATE');
     else
@@ -133,7 +133,6 @@ cron.schedule('* * * * *', function () {
   connection.query("SELECT * FROM smarttools.video WHERE state = 'InProcess'", function (err, videos, fields) {
     if (!err) {
       console.log('NUMBER OF VIDEOS: ' + videos.length);
-      console.log(videos);
       _.each(videos, function (video) {
         updateVideo(video.videoId, "Process");
       });
