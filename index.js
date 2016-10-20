@@ -114,7 +114,7 @@ var convertVideo = function (video) {
       console.log('ERROR CONVERTING VIDEO: ' + err.message);
     })
     .on('end', function (file) {
-      console.log('SUCCESS CONVERTING VIDEO');
+      
       updateVideo(videoId, "Converted");
       if (_.contains(verifiedEmails, video.email)) {
         sendMail(video.email, video.contestId);
@@ -125,18 +125,6 @@ var convertVideo = function (video) {
     })
     .save(__dirname + '/../efs/converted/' + videoId + '.mp4');
 };
-
-
-connection.query("SELECT * FROM smarttools.video WHERE state = 'InProcess'", function (err, videos, fields) {
-    if (!err) {
-      console.log('NUMBER OF VIDEOS: ' + videos.length);
-      console.log(videos);
-      
-    }
-    else {
-      console.log('ERROR LOADING VIDEOS : ' + err);
-    }
-  });
 
 cron.schedule('* * * * *', function () {
   var date = new Date();
