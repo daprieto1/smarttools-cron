@@ -130,7 +130,7 @@ function uploadObject(done, video) {
    
 
     var fStream = file.createReadStream(__dirname + '/converted/' + video.idVideo + '.mp4');
-    var uploader = new streamingS3(fStream, { accessKeyId: 'AKIAIM3H4EJJGJRNOR7A', secretAccessKey: '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' },
+    var uploader = new streamingS3(fStream, { accessKeyId: '', secretAccessKey: '' },
         {
             Bucket: 'smarttools-grupo4',
             Key: 'converted/' + video.idVideo + '.mp4',

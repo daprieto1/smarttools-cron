@@ -5,3 +5,5 @@ config.json
 aws-config.json
 relational-conf.json
 .DS_Store
+jwplayer/
+
