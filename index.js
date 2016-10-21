@@ -19,150 +19,152 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 var dynamodb = new AWS.DynamoDB();
 
 var verify = function (email) {
-  var params = {
-    EmailAddress: email
-  };
+    var params = {
+        EmailAddress: email
+    };
 
-  ses.verifyEmailAddress(params, function (err, data) {
-    if (err) {
-      console.log('ERROR VERIFYING MAIL: ' + err);
-    }
-    else {
-      console.log('SUCCESS VERIFYING MAIL');
-    }
-  });
+    ses.verifyEmailAddress(params, function (err, data) {
+        if (err) {
+            console.log('ERROR VERIFYING MAIL: ' + err);
+        }
+        else {
+            console.log('SUCCESS VERIFYING MAIL');
+        }
+    });
 }
 
 var sendMail = function (email, constestId) {
 
-  var ses_mail = "From: 'AWS Tutorial Series' <" + sender + ">\n";
-  ses_mail = ses_mail + "To: " + email + "\n";
-  ses_mail = ses_mail + "Subject: Video Successfully converted\n";
-  ses_mail = ses_mail + "--NextPart\n";
-  ses_mail = ses_mail + "Content-Type: text/html; charset=us-ascii\n\n";
-  ses_mail = ses_mail + "<b>Tu video ha sido publicado porfavor visitanos en <a>http://localhost:3000/smarttools/" + constestId + "</a></b>\n\n";
-  ses_mail = ses_mail + "--NextPart\n";
+    var ses_mail = "From: 'AWS Tutorial Series' <" + sender + ">\n";
+    ses_mail = ses_mail + "To: " + email + "\n";
+    ses_mail = ses_mail + "Subject: Video Successfully converted\n";
+    ses_mail = ses_mail + "--NextPart\n";
+    ses_mail = ses_mail + "Content-Type: text/html; charset=us-ascii\n\n";
+    ses_mail = ses_mail + "<b>Tu video ha sido publicado porfavor visitanos en <a>http://localhost:3000/smarttools/" + constestId + "</a></b>\n\n";
+    ses_mail = ses_mail + "--NextPart\n";
 
-  var params = {
-    RawMessage: { Data: new Buffer(ses_mail) },
-    Destinations: [email],
-    Source: "'SmartTools Team' <" + email + ">'"
-  };
+    var params = {
+        RawMessage: { Data: new Buffer(ses_mail) },
+        Destinations: [email],
+        Source: "'SmartTools Team' <" + email + ">'"
+    };
 
-  ses.sendRawEmail(params, function (err, data) {
-    if (err) {
-      console.log('ERROR SENDING MAIL: ' + err);
-    }
-    else {
-      console.log('SUCCESS SENDING MAIL');
-    }
-  });
+    ses.sendRawEmail(params, function (err, data) {
+        if (err) {
+            console.log('ERROR SENDING MAIL: ' + err);
+        }
+        else {
+            console.log('SUCCESS SENDING MAIL');
+        }
+    });
 }
 
 var list = function () {
-  verifiedEmails = [];
-  ses.listVerifiedEmailAddresses(function (err, data) {
-    if (err) {
-      console.log(err);
-    }
-    else {
-      verifiedEmails = data.VerifiedEmailAddresses;
-    }
-  });
+    verifiedEmails = [];
+    ses.listVerifiedEmailAddresses(function (err, data) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            verifiedEmails = data.VerifiedEmailAddresses;
+        }
+    });
 }
 
 list();
 
 var updateVideo = function (videoId) {
 
-  var params = {
-    TableName: 'videos',
-    Key: {
-      'id': parseInt(videoId)
-    },
-    UpdateExpression: "set #state = :state",
-    ExpressionAttributeNames: {
-      '#state': "state"
-    },
-    ExpressionAttributeValues: {
-      ":state": 'Converted'
-    }
-  };
+    var params = {
+        TableName: 'videos',
+        Key: {
+            'id': parseInt(videoId)
+        },
+        UpdateExpression: "set #state = :state",
+        ExpressionAttributeNames: {
+            '#state': "state"
+        },
+        ExpressionAttributeValues: {
+            ":state": 'Converted'
+        }
+    };
 
-  docClient.update(params, function (err, data) {
-    if (err) {
-      console.log("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
-      console.log('ERROR UPDATING VIDEO STATE: ' + err);
-    } else {
-      console.log('SUCCESS UPDATING VIDEO STATE');
-    }
-  });
+    docClient.update(params, function (err, data) {
+        if (err) {
+            console.log("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
+            console.log('ERROR UPDATING VIDEO STATE: ' + err);
+        } else {
+            console.log('SUCCESS UPDATING VIDEO STATE');
+        }
+    });
 
 }
 
 function convertVideo(video, done) {
-  var videoId = video.idVideo;
-  console.log('CONVERT video ID = ' + videoId);
-  ffmpeg(__dirname + '/upload/' + videoId)
-    .audioCodec('aac')
-    .videoCodec('libx264')
-    .size('320x200')
-    .on('error', function (err) {
-      console.log('ERROR CONVERTING VIDEO: ' + err.message);
-    })
-    .on('end', function (file) {
-      uploadObject(done);
-      console.log('SUCCESS CONVERTING VIDEO');
-      updateVideo(videoId);
-      if (_.contains(verifiedEmails, video.email)) {
-        sendMail(video.email, video.contestId);
-      } else {
-        console.log('USER MUST VERIFY MAIL');
-        verify(video.email);
-      }
-    })
-    .save(__dirname + '/converted/' + videoId + '.mp4');
-  return true;
+    var videoId = video.idVideo;
+    console.log('CONVERT video ID = ' + videoId);
+    ffmpeg(__dirname + '/upload/' + videoId)
+        .audioCodec('aac')
+        .videoCodec('libx264')
+        .size('320x200')
+        .on('error', function (err) {
+            console.log('ERROR CONVERTING VIDEO: ' + err.message);
+        })
+        .on('end', function (file) {
+            uploadObject(done, video);
+            console.log('SUCCESS CONVERTING VIDEO');
+            updateVideo(videoId);
+            if (_.contains(verifiedEmails, video.email)) {
+                sendMail(video.email, video.contestId);
+            } else {
+                console.log('USER MUST VERIFY MAIL');
+                verify(video.email);
+            }
+        })
+        .save(__dirname + '/converted/' + videoId + '.mp4');
+    return true;
 };
 
-function uploadObject(done) {
-  var body = file.createReadStream(__dirname + '/converted/1.mp4').pipe(zlib.createGzip());
-  var params = { Bucket: 'smarttools-grupo4', Key: 'converted/1.mp4', Body: 'body' };
-  s3.putObject(params, function (err) {
-    if (!err) {
-      console.log('VIDEO UPLOAD SUCCESS');
-      done();
-      console.timeEnd("worker-time");
-    }
-  });
+function uploadObject(done, video) {
+    var body = file.createReadStream(__dirname + '/converted/' + video.idVideo + '.mp4').pipe(zlib.createGzip());
+    var params = { Bucket: 'smarttools-grupo4', Key: 'converted/' + video.idVideo + '.mp4', Body: body, ContentType: 'application/octet-stream' };
+    s3.upload(params, function (err) {
+        if (!err) {
+            console.log('VIDEO UPLOAD SUCCESS');
+            done();
+            console.timeEnd("worker-time");
+        } else {
+            console.log(err);
+        }
+    });
 }
 
 function getObject(video) {
-  stream = file.createWriteStream(__dirname + '/upload/' + video.idVideo);
-  var params = { Bucket: 'smarttools-grupo4', Key: 'upload/1.mp4' };
-  s3.getObject(params).createReadStream().pipe(stream);
+    stream = file.createWriteStream(__dirname + '/upload/' + video.idVideo);
+    var params = { Bucket: 'smarttools-grupo4', Key: 'upload/' + video.idVideo };
+    s3.getObject(params).createReadStream().pipe(stream);
 }
 
 var stream
 var app = Consumer.create({
-  queueUrl: 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools',
-  attributeNames: ['All'],
-  handleMessage: function (message, done) {
-    console.log('--------------------------------------------------');
-    console.time("worker-time");
-    console.log('MESSAGE = ' + message.MessageId);
-    var video = JSON.parse(message.Body);
-    getObject(video);
-    stream.on('finish', function () {
-      console.log('VIDEO DOWNLOAD SUCCESS');
-      convertVideo(video, done);
-    });
-  },
-  sqs: new AWS.SQS()
+    queueUrl: 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools',
+    attributeNames: ['All'],
+    handleMessage: function (message, done) {
+        console.log('--------------------------------------------------');
+        console.time("worker-time");
+        console.log('MESSAGE = ' + message.MessageId);
+        var video = JSON.parse(message.Body);
+        getObject(video);
+        stream.on('finish', function () {
+            console.log('VIDEO DOWNLOAD SUCCESS');
+            convertVideo(video, done);
+        });
+    },
+    sqs: new AWS.SQS()
 });
 
 app.on('error', function (err) {
-  console.log(err.message);
+    console.log(err.message);
 });
 
 app.start();
