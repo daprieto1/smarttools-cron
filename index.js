@@ -171,11 +171,10 @@ app.on('error', function (err) {
     console.log(err.message);
 });
 
-//app.start();
+app.start();
 
 var date = new Date();
 console.log('\n' + date + ' SmartTools Worker is running now');
 
-uploadObject(null, { idVideo: 3136327080662 });
 
 
