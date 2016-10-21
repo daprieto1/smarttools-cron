@@ -5,6 +5,7 @@ var ffmpeg = require('fluent-ffmpeg');
 var file = require('fs');
 var zlib = require('zlib');
 var path = require('path');
+var streamingS3 = require('streaming-s3')
 
 var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
@@ -126,17 +127,20 @@ function convertVideo(video, done) {
 };
 
 function uploadObject(done, video) {
-    var body = file.createReadStream(__dirname + '/converted/' + video.idVideo + '.mp4').pipe(zlib.createGzip());
-    var params = { Bucket: 'smarttools-grupo4', Key: 'converted/' + video.idVideo + '.mp4', Body: body, ContentType: 'application/octet-stream' };
-    s3.upload(params, function (err) {
-        if (!err) {
-            console.log('VIDEO UPLOAD SUCCESS');
-            done();
-            console.timeEnd("worker-time");
-        } else {
-            console.log(err);
+   
+
+    var fStream = file.createReadStream(__dirname + '/converted/' + video.idVideo + '.mp4');
+    var uploader = new streamingS3(fStream, { accessKeyId: 'AKIAIM3H4EJJGJRNOR7A', secretAccessKey: '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' },
+        {
+            Bucket: 'smarttools-grupo4',
+            Key: 'converted/' + video.idVideo + '.mp4',
+            ContentType: 'application/octet-stream'
+        }, function (err, resp, stats) {
+            if (err) return console.log('Upload error: ', e);
+            console.log('Upload stats: ', stats);
+            console.log('Upload successful: ', resp);
         }
-    });
+    );
 }
 
 function getObject(video) {
@@ -167,9 +171,11 @@ app.on('error', function (err) {
     console.log(err.message);
 });
 
-app.start();
+//app.start();
 
 var date = new Date();
 console.log('\n' + date + ' SmartTools Worker is running now');
+
+uploadObject(null, { idVideo: 3136327080662 });
 
 
