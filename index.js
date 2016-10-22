@@ -11,6 +11,7 @@ var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
 
 // Load your AWS credentials and try to instantiate the object.
+var awsconf = JSON.parse(file.readFileSync(__dirname + '/aws-config.json', 'utf8'));
 AWS.config.loadFromPath(__dirname + '/aws-config.json');
 
 // Instantiate SES.
@@ -127,13 +128,13 @@ function convertVideo(video, done) {
 };
 
 function uploadObject(done, video) {
-   
+
 
     var fStream = file.createReadStream(__dirname + '/converted/' + video.idVideo + '.mp4');
-    var uploader = new streamingS3(fStream, { accessKeyId: '', secretAccessKey: '' },
+    var uploader = new streamingS3(fStream, { accessKeyId: awsconf.accessKeyId, secretAccessKey: awsconf.secretAccessKey },
         {
             Bucket: 'smarttools-grupo4',
-            Key: 'converted/' + video.idVideo + '.mp4',
+            Key: video.idVideo + '.mp4',
             ContentType: 'application/octet-stream'
         }, function (err, resp, stats) {
             if (err) return console.log('Upload error: ', e);
