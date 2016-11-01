@@ -1,6 +1,5 @@
 var Consumer = require('sqs-consumer');
 var AWS = require('aws-sdk');
-var _ = require('underscore');
 var ffmpeg = require('fluent-ffmpeg');
 var file = require('fs');
 var zlib = require('zlib');
@@ -11,29 +10,16 @@ var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
 
 // Load your AWS credentials and try to instantiate the object.
-var awsconf = JSON.parse(file.readFileSync(__dirname + '/aws-config.json', 'utf8'));
-AWS.config.loadFromPath(__dirname + '/aws-config.json');
+AWS.config = new AWS.Config({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: 'us-west-2'
+});
 
 // Instantiate SES.
-var ses = new AWS.SES();
 var s3 = new AWS.S3();
 var docClient = new AWS.DynamoDB.DocumentClient();
 var dynamodb = new AWS.DynamoDB();
-
-var verify = function (email) {
-    var params = {
-        EmailAddress: email
-    };
-
-    ses.verifyEmailAddress(params, function (err, data) {
-        if (err) {
-            console.log('ERROR VERIFYING MAIL: ' + err);
-        }
-        else {
-            console.log('SUCCESS VERIFYING MAIL');
-        }
-    });
-}
 
 var sendMail = function (email, constestId) {
 
@@ -60,20 +46,6 @@ var sendMail = function (email, constestId) {
         }
     });
 }
-
-var list = function () {
-    verifiedEmails = [];
-    ses.listVerifiedEmailAddresses(function (err, data) {
-        if (err) {
-            console.log(err);
-        }
-        else {
-            verifiedEmails = data.VerifiedEmailAddresses;
-        }
-    });
-}
-
-list();
 
 var updateVideo = function (videoId) {
 
@@ -151,7 +123,7 @@ function getObject(video) {
 }
 
 var stream
-var app = Consumer.create({
+var consumer = Consumer.create({
     queueUrl: 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools',
     attributeNames: ['All'],
     handleMessage: function (message, done) {
@@ -168,14 +140,13 @@ var app = Consumer.create({
     sqs: new AWS.SQS()
 });
 
-app.on('error', function (err) {
+consumer.on('error', function (err) {
     console.log(err.message);
 });
 
-app.start();
+console.log('\n' + new Date() + ' SmartTools Worker is running now');
+//consumer.start();
 
-var date = new Date();
-console.log('\n' + date + ' SmartTools Worker is running now');
 
 
 
