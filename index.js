@@ -7,6 +7,10 @@ var path = require('path');
 var streamingS3 = require('streaming-s3')
 var helper = require('sendgrid').mail;
 var sg = require('sendgrid')(process.env.SENDGRID_APIKEY);
+var express = require('express');
+var app = express();
+
+app.set('port', (process.env.PORT || 5000));
 
 var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
@@ -125,7 +129,7 @@ function getObject(video) {
     console.time('getObject');
     stream = file.createWriteStream(__dirname + '/upload/' + video.idVideo);
     var params = { Bucket: 'smarttools-grupo4', Key: 'upload/' + video.idVideo };
-    s3.getObject(params).createReadStream().pipe(stream);    
+    s3.getObject(params).createReadStream().pipe(stream);
 }
 
 var stream
@@ -151,5 +155,7 @@ consumer.on('error', function (err) {
     console.log(err.message);
 });
 
-console.log('\n' + new Date() + ' SmartTools Worker is running now');
-consumer.start();
+app.listen(app.get('port'), function () {
+    console.log('\n' + new Date() + ' SmartTools Worker is running now');
+    consumer.start();
+});
