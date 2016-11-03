@@ -5,6 +5,8 @@ var file = require('fs');
 var zlib = require('zlib');
 var path = require('path');
 var streamingS3 = require('streaming-s3')
+var helper = require('sendgrid').mail;
+var sg = require('sendgrid')(process.env.SENDGRID_APIKEY);
 
 var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
@@ -21,25 +23,26 @@ var s3 = new AWS.S3();
 var docClient = new AWS.DynamoDB.DocumentClient();
 var dynamodb = new AWS.DynamoDB();
 
-var sendMail = function (email, constestId) {
+/**
+ * Send Mail using sendgrid
+ */
+function sendMail(email, constestId) {
 
-    var ses_mail = "From: 'AWS Tutorial Series' <" + sender + ">\n";
-    ses_mail = ses_mail + "To: " + email + "\n";
-    ses_mail = ses_mail + "Subject: Video Successfully converted\n";
-    ses_mail = ses_mail + "--NextPart\n";
-    ses_mail = ses_mail + "Content-Type: text/html; charset=us-ascii\n\n";
-    ses_mail = ses_mail + "<b>Tu video ha sido publicado porfavor visitanos en <a>http://localhost:3000/smarttools/" + constestId + "</a></b>\n\n";
-    ses_mail = ses_mail + "--NextPart\n";
+    var from_email = new helper.Email('da.prieto1@uniandes.edu.co');
+    var to_email = new helper.Email(email);
+    var subject = 'Hello World from the SendGrid Node.js Library!';
+    var content = new helper.Content('text/html', '<b>Tu video ha sido publicado porfavor visitanos en <a>http://localhost:3000/smarttools/' + constestId + '</a></b>\n\n');
+    var mail = new helper.Mail(from_email, subject, to_email, content);
 
-    var params = {
-        RawMessage: { Data: new Buffer(ses_mail) },
-        Destinations: [email],
-        Source: "'SmartTools Team' <" + email + ">'"
-    };
+    var request = sg.emptyRequest({
+        method: 'POST',
+        path: '/v3/mail/send',
+        body: mail.toJSON(),
+    });
 
-    ses.sendRawEmail(params, function (err, data) {
-        if (err) {
-            console.log('ERROR SENDING MAIL: ' + err);
+    sg.API(request, function (error, response) {
+        if (error) {
+            console.log('ERROR SENDING MAIL: ' + error);
         }
         else {
             console.log('SUCCESS SENDING MAIL');
@@ -128,7 +131,7 @@ var consumer = Consumer.create({
     attributeNames: ['All'],
     handleMessage: function (message, done) {
         console.log('--------------------------------------------------');
-        console.time("worker-time");
+        console.time('worker-time');
         console.log('MESSAGE = ' + message.MessageId);
         var video = JSON.parse(message.Body);
         getObject(video);

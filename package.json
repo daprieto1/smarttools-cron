@@ -13,6 +13,7 @@
     "fluent-ffmpeg": "^2.1.0",
     "mongodb": "^2.2.10",
     "node-cron": "^1.1.2",
+    "sendgrid": "^4.7.1",
     "sqs-consumer": "^3.3.0",
     "streaming-s3": "^0.4.1",
     "underscore": "^1.8.3"

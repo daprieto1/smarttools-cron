@@ -1,6 +1,10 @@
 var AWS = require('aws-sdk');
 
-AWS.config.loadFromPath(__dirname + '/aws-config.json');
+AWS.config = new AWS.Config({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: 'us-west-2'
+});
 
 var sqs = new AWS.SQS();
 
@@ -18,7 +22,7 @@ var params = {
   MessageBody: JSON.stringify(body),
   QueueUrl: "https://sqs.us-west-2.amazonaws.com/942635221058/smarttools"
 };
-for (var i = 0; i < 1000; i++) {
+for (var i = 0; i < 1; i++) {
   sqs.sendMessage(params, function (err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else console.log(data);           // successful response
