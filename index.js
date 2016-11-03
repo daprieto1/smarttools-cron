@@ -156,6 +156,6 @@ consumer.on('error', function (err) {
 });
 
 app.listen(app.get('port'), function () {
-    console.log('\n' + new Date() + ' SmartTools Worker is running now y');
+    console.log('\n' + new Date() + ' SmartTools Worker is running now');
     consumer.start();
 });
