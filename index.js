@@ -78,6 +78,7 @@ var updateVideo = function (videoId) {
 }
 
 function convertVideo(video, done) {
+    console.time('convertVideo');
     var videoId = video.idVideo;
     console.log('CONVERT video ID = ' + videoId);
     ffmpeg(__dirname + '/upload/' + videoId)
@@ -88,41 +89,43 @@ function convertVideo(video, done) {
             console.log('ERROR CONVERTING VIDEO: ' + err.message);
         })
         .on('end', function (file) {
+            console.timeEnd('convertVideo');
             uploadObject(done, video);
             console.log('SUCCESS CONVERTING VIDEO');
             updateVideo(videoId);
-            if (_.contains(verifiedEmails, video.email)) {
-                sendMail(video.email, video.contestId);
-            } else {
-                console.log('USER MUST VERIFY MAIL');
-                verify(video.email);
-            }
+            sendMail(video.email, video.contestId);
         })
         .save(__dirname + '/converted/' + videoId + '.mp4');
     return true;
 };
 
 function uploadObject(done, video) {
-
-
+    console.time('uploadObject');
     var fStream = file.createReadStream(__dirname + '/converted/' + video.idVideo + '.mp4');
-    var uploader = new streamingS3(fStream, { accessKeyId: awsconf.accessKeyId, secretAccessKey: awsconf.secretAccessKey },
+    var uploader = new streamingS3(fStream, { accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY },
         {
             Bucket: 'smarttools-grupo4',
             Key: video.idVideo + '.mp4',
             ContentType: 'application/octet-stream'
-        }, function (err, resp, stats) {
-            if (err) return console.log('Upload error: ', e);
-            console.log('Upload stats: ', stats);
-            console.log('Upload successful: ', resp);
+        }, function (error, resp, stats) {
+            if (error) {
+                console.log('ERROR UPLOADING VIDEO: ' + error);
+            }
+            else {
+                console.log('SUCCESS UPLOADING VIDEO');
+                console.timeEnd('uploadObject');
+                done();
+                console.timeEnd('worker-time');
+            }
         }
     );
 }
 
 function getObject(video) {
+    console.time('getObject');
     stream = file.createWriteStream(__dirname + '/upload/' + video.idVideo);
     var params = { Bucket: 'smarttools-grupo4', Key: 'upload/' + video.idVideo };
-    s3.getObject(params).createReadStream().pipe(stream);
+    s3.getObject(params).createReadStream().pipe(stream);    
 }
 
 var stream
@@ -136,6 +139,7 @@ var consumer = Consumer.create({
         var video = JSON.parse(message.Body);
         getObject(video);
         stream.on('finish', function () {
+            console.timeEnd('getObject');
             console.log('VIDEO DOWNLOAD SUCCESS');
             convertVideo(video, done);
         });
@@ -148,8 +152,4 @@ consumer.on('error', function (err) {
 });
 
 console.log('\n' + new Date() + ' SmartTools Worker is running now');
-//consumer.start();
-
-
-
-
+consumer.start();

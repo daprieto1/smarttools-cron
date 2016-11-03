@@ -10,7 +10,7 @@ var sqs = new AWS.SQS();
 
 var body = {
   idVideo: '2288757293999',
-  email: 'diego@mensajerosurbanos.com'
+  email: 'da.prieto1@uniandes.edu.co'
 };
 var params = {
   MessageAttributes: {
@@ -22,6 +22,7 @@ var params = {
   MessageBody: JSON.stringify(body),
   QueueUrl: "https://sqs.us-west-2.amazonaws.com/942635221058/smarttools"
 };
+
 for (var i = 0; i < 1; i++) {
   sqs.sendMessage(params, function (err, data) {
     if (err) console.log(err, err.stack); // an error occurred
