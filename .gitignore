@@ -1,6 +1,6 @@
 node_modules/
-upload/
-converted/
+!upload/.gitkeep
+!converted/.gitkeep
 config.json
 aws-config.json
 relational-conf.json
