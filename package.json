@@ -4,7 +4,8 @@
   "description": "This is the implementation to the CRON for convert videos from every format to .mp4 format",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
