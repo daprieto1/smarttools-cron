@@ -1,6 +1,6 @@
 {
   "name": "smart-tools-cron",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This is the implementation to the CRON for convert videos from every format to .mp4 format",
   "main": "index.js",
   "scripts": {
