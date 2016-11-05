@@ -15,6 +15,10 @@ app.set('port', (process.env.PORT || 5000));
 var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
 
+var hireFireUrl = '/hirefire/' + process.env.HIREFIRE_TOKEN + '/info';
+
+var queueUrl = 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools';
+
 // Load your AWS credentials and try to instantiate the object.
 AWS.config = new AWS.Config({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -22,8 +26,9 @@ AWS.config = new AWS.Config({
     region: 'us-west-2'
 });
 
-// Instantiate SES.
+// Instantiate AWS Services.
 var s3 = new AWS.S3();
+var sqs = new AWS.SQS();
 var docClient = new AWS.DynamoDB.DocumentClient();
 var dynamodb = new AWS.DynamoDB();
 
@@ -134,7 +139,7 @@ function getObject(video) {
 
 var stream
 var consumer = Consumer.create({
-    queueUrl: 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools',
+    queueUrl: queueUrl,
     attributeNames: ['All'],
     handleMessage: function (message, done) {
         console.log('--------------------------------------------------');
@@ -148,12 +153,34 @@ var consumer = Consumer.create({
             convertVideo(video, done);
         });
     },
-    sqs: new AWS.SQS()
+    sqs: sqs
 });
 
 consumer.on('error', function (err) {
     console.log(err.message);
 });
+
+app.get(hireFireUrl, function (req, res) {
+    var params = {
+        AttributeNames: [
+            "All"
+        ],
+        QueueUrl: queueUrl
+    };
+    sqs.getQueueAttributes(params, function (error, data) {
+        if (error) {
+            res.send(error);
+        } else {
+            var response = [
+                {
+                    name: "worker",
+                    quantity: data.Attributes.ApproximateNumberOfMessages
+                }
+            ];
+            res.send(response);
+        }
+    });
+})
 
 app.listen(app.get('port'), function () {
     console.log('\n' + new Date() + ' SmartTools Worker is running now');
