@@ -7,15 +7,9 @@ var path = require('path');
 var streamingS3 = require('streaming-s3')
 var helper = require('sendgrid').mail;
 var sg = require('sendgrid')(process.env.SENDGRID_APIKEY);
-var express = require('express');
-var app = express();
-
-app.set('port', (process.env.PORT || 5000));
 
 var sender = "da.prieto1@uniandes.edu.co";
 var verifiedEmails = [];
-
-var hireFireUrl = '/hirefire/' + process.env.HIREFIRE_TOKEN + '/info';
 
 var queueUrl = 'https://sqs.us-west-2.amazonaws.com/942635221058/smarttools';
 
@@ -49,7 +43,7 @@ function sendMail(email, constestId) {
         body: mail.toJSON(),
     });
 
-    sg.API(request, function (error, response) {
+    sg.API(request, function(error, response) {
         if (error) {
             console.log('ERROR SENDING MAIL: ' + error);
         }
@@ -59,7 +53,7 @@ function sendMail(email, constestId) {
     });
 }
 
-var updateVideo = function (videoId) {
+var updateVideo = function(videoId) {
 
     var params = {
         TableName: 'videos',
@@ -75,7 +69,7 @@ var updateVideo = function (videoId) {
         }
     };
 
-    docClient.update(params, function (err, data) {
+    docClient.update(params, function(err, data) {
         if (err) {
             console.log("Unable to update item. Error JSON:", JSON.stringify(err, null, 2));
             console.log('ERROR UPDATING VIDEO STATE: ' + err);
@@ -94,10 +88,10 @@ function convertVideo(video, done) {
         .audioCodec('aac')
         .videoCodec('libx264')
         .size('320x200')
-        .on('error', function (err) {
+        .on('error', function(err) {
             console.log('ERROR CONVERTING VIDEO: ' + err.message);
         })
-        .on('end', function (file) {
+        .on('end', function(file) {
             console.timeEnd('convertVideo');
             uploadObject(done, video);
             console.log('SUCCESS CONVERTING VIDEO');
@@ -116,7 +110,7 @@ function uploadObject(done, video) {
             Bucket: 'smarttools-grupo4',
             Key: video.idVideo + '.mp4',
             ContentType: 'application/octet-stream'
-        }, function (error, resp, stats) {
+        }, function(error, resp, stats) {
             if (error) {
                 console.log('ERROR UPLOADING VIDEO: ' + error);
             }
@@ -141,13 +135,13 @@ var stream
 var consumer = Consumer.create({
     queueUrl: queueUrl,
     attributeNames: ['All'],
-    handleMessage: function (message, done) {
+    handleMessage: function(message, done) {
         console.log('--------------------------------------------------');
         console.time('worker-time');
         console.log('MESSAGE = ' + message.MessageId);
         var video = JSON.parse(message.Body);
         getObject(video);
-        stream.on('finish', function () {
+        stream.on('finish', function() {
             console.timeEnd('getObject');
             console.log('VIDEO DOWNLOAD SUCCESS');
             convertVideo(video, done);
@@ -156,33 +150,9 @@ var consumer = Consumer.create({
     sqs: sqs
 });
 
-consumer.on('error', function (err) {
+consumer.on('error', function(err) {
     console.log(err.message);
 });
 
-app.get(hireFireUrl, function (req, res) {
-    var params = {
-        AttributeNames: [
-            "All"
-        ],
-        QueueUrl: queueUrl
-    };
-    sqs.getQueueAttributes(params, function (error, data) {
-        if (error) {
-            res.send(error);
-        } else {
-            var response = [
-                {
-                    name: "worker",
-                    quantity: data.Attributes.ApproximateNumberOfMessages
-                }
-            ];
-            res.send(response);
-        }
-    });
-})
-
-app.listen(app.get('port'), function () {
-    console.log('\n' + new Date() + ' SmartTools Worker is running now');
-    consumer.start();
-});
+console.log('\n' + new Date() + ' SmartTools Worker is running now');
+consumer.start();
