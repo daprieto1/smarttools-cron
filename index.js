@@ -173,7 +173,7 @@ app.get(hireFireUrl, function (req, res) {
         } else {
             var response = [
                 {
-                    name: "uaworker",
+                    name: "videos",
                     quantity: data.Attributes.ApproximateNumberOfMessages
                 }
             ];
